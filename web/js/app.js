@@ -3,6 +3,9 @@
  * Pure Java 25 Backend Integration + Supabase Client Telemetry
  */
 
+// Render Backend URL Configuration
+const BACKEND_URL = 'https://underground-parking.onrender.com';
+
 // Application State
 let currentFloorFilter = 'ALL';
 let allSlots = [];
@@ -78,9 +81,9 @@ function startLiveClock() {
 async function refreshData() {
     try {
         const [slotsRes, activeRes, statsRes] = await Promise.all([
-            fetch('/api/slots'),
-            fetch('/api/active'),
-            fetch('/api/stats')
+            fetch(`${BACKEND_URL}/api/slots`),
+            fetch(`${BACKEND_URL}/api/active`),
+            fetch(`${BACKEND_URL}/api/stats`)
         ]);
 
         if (slotsRes.ok) {
@@ -383,7 +386,7 @@ async function handleVehicleEntry(e) {
     btn.innerHTML = '<span>PARKING IN SUB-LEVELS...</span>';
 
     try {
-        const res = await fetch('/api/park', {
+        const res = await fetch(`${BACKEND_URL}/api/park`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ plateNumber, vehicleType })
@@ -491,7 +494,7 @@ async function handleVehicleExit(e) {
     btn.innerHTML = '<span>PROCESSING CHECKOUT...</span>';
 
     try {
-        const res = await fetch('/api/exit', {
+        const res = await fetch(`${BACKEND_URL}/api/exit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ plateNumber })
@@ -582,7 +585,7 @@ function closeReceiptModal() {
 // ================= SUPABASE MODAL & CONFIG =================
 async function fetchSupabaseStatus() {
     try {
-        const res = await fetch('/api/supabase/status');
+        const res = await fetch(`${BACKEND_URL}/api/supabase/status`);
         if (res.ok) {
             supabaseStatus = await res.json();
             renderSupabaseIndicator();
@@ -622,7 +625,7 @@ function renderSupabaseIndicator() {
 
 async function fetchSchemaText() {
     try {
-        const res = await fetch('/api/schema');
+        const res = await fetch(`${BACKEND_URL}/api/schema`);
         if (res.ok) {
             const sql = await res.text();
             document.getElementById('sqlSchemaText').textContent = sql;
@@ -649,7 +652,7 @@ async function saveSupabaseConfig(e) {
     const key = document.getElementById('cfgSupabaseKey').value.trim();
 
     try {
-        const res = await fetch('/api/supabase/config', {
+        const res = await fetch(`${BACKEND_URL}/api/supabase/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, key })
@@ -694,7 +697,7 @@ function copySqlSchema() {
 async function resetDemo() {
     if (!confirm('Reset underground parking to initial demo state?')) return;
     try {
-        const res = await fetch('/api/reset', { method: 'POST' });
+        const res = await fetch(`${BACKEND_URL}/api/reset`, { method: 'POST' });
         if (res.ok) {
             showToast('Reset underground parking bays to demo state.', 'info');
             recentEnteredPlate = null;
