@@ -1,0 +1,10 @@
+{
+  "name": "aura-underground-parking",
+  "version": "1.0.0",
+  "description": "Smart Underground Parking Management System with Supabase and Java Backend",
+  "private": true,
+  "scripts": {
+    "start": "java -cp bin com.underground.parking.UndergroundParkingServer",
+    "build": "javac -d bin src/main/java/com/underground/parking/*.java src/main/java/com/underground/parking/model/*.java src/main/java/com/underground/parking/service/*.java src/main/java/com/underground/parking/util/*.java"
+  }
+}

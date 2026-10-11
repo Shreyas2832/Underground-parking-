@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA Underground Parking Management System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Top Navigation & Telemetry -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="4" />
+                    <path d="M9 17V7h4a3 3 0 0 1 0 6H9" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="brand-title">AURA SUB-LEVELS</h1>
+                <span class="brand-sub">Smart Underground Parking Terminal • Java 25 & Supabase</span>
+            </div>
+        </div>
+
+        <div class="header-stats">
+            <div class="stat-pill">
+                <span class="stat-dot available"></span>
+                <span class="stat-label">Available:</span>
+                <span id="statAvailable" class="stat-val highlight">--</span>
+            </div>
+            <div class="stat-pill">
+                <span class="stat-dot occupied"></span>
+                <span class="stat-label">Occupied:</span>
+                <span id="statOccupied" class="stat-val">--</span>
+            </div>
+            <div class="stat-pill">
+                <span class="stat-label">5-Seater:</span>
+                <span id="stat5Seater" class="stat-val">--/--</span>
+            </div>
+            <div class="stat-pill">
+                <span class="stat-label">7-Seater:</span>
+                <span id="stat7Seater" class="stat-val">--/--</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Supabase Status Pill -->
+            <button id="supabaseBtn" class="supabase-badge" onclick="openSupabaseModal()">
+                <span id="supabaseDot" class="status-indicator"></span>
+                <span id="supabaseText">Supabase Sync</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </button>
+
+            <!-- Reset Demo -->
+            <button class="icon-btn" onclick="resetDemo()" title="Reset to Demo State">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+            </button>
+            <div id="liveClock" class="clock-display">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- Main Subterranean Parking Dashboard Layout -->
+    <main class="dashboard-container">
+        
+        <!-- LEFT SIDE: Underground Parking Visualization & Vehicles Entered Feed -->
+        <section class="left-section">
+            
+            <!-- Floor & Sub-Level Controls -->
+            <div class="level-bar">
+                <div class="level-tabs">
+                    <button class="level-tab active" data-floor="ALL" onclick="filterFloor('ALL')">
+                        <span class="tab-indicator"></span>
+                        All Levels (B1 & B2)
+                    </button>
+                    <button class="level-tab" data-floor="Level B1" onclick="filterFloor('Level B1')">
+                        <span class="tab-indicator"></span>
+                        Level B1 (Upper Deck)
+                    </button>
+                    <button class="level-tab" data-floor="Level B2" onclick="filterFloor('Level B2')">
+                        <span class="tab-indicator"></span>
+                        Level B2 (Deep Deck)
+                    </button>
+                </div>
+
+                <div class="legend">
+                    <span class="legend-item"><span class="legend-dot green"></span> Free Bay</span>
+                    <span class="legend-item"><span class="legend-dot red"></span> Occupied</span>
+                    <span class="legend-item"><span class="legend-pill cyan">7S</span> 7-Seater Bay</span>
+                    <span class="legend-item"><span class="legend-pill amber">5S</span> 5-Seater Bay</span>
+                </div>
+            </div>
+
+            <!-- UNDERGROUND PARKING SLOTS GRID VIEW -->
+            <div class="parking-facility-view">
+                <div class="facility-header">
+                    <div class="deck-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                        <span>UNDERGROUND PARKING BAYS</span>
+                    </div>
+                    <div class="deck-direction">
+                        <span class="driveway-label">▲ MAIN UNDERGROUND RAMP DRIVEWAY ▼</span>
+                    </div>
+                </div>
+
+                <!-- Slots Render Grid -->
+                <div id="slotsGrid" class="slots-grid">
+                    <!-- Populated by JavaScript -->
+                    <div class="grid-loading">Loading underground parking sensor telemetry...</div>
+                </div>
+            </div>
+
+            <!-- VEHICLES ENTERED DISPLAY (Left hand side as required!) -->
+            <div class="entered-vehicles-panel">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <div class="pulse-beacon"></div>
+                        <h2 class="panel-title">VEHICLES ENTERED IN UNDERGROUND PARKING</h2>
+                    </div>
+                    <span id="activeCountBadge" class="count-badge">0 Inside</span>
+                </div>
+
+                <p class="panel-desc">Real-time telemetry of cars logged into subterranean levels. Click any car for instant exit checkout.</p>
+
+                <!-- List of entered vehicles -->
+                <div id="activeVehiclesList" class="active-vehicles-list">
+                    <!-- Dynamic vehicle cards -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT SIDE: ENTER AND EXIT TERMINAL -->
+        <aside class="right-terminal">
+            
+            <div class="terminal-card">
+                
+                <!-- Terminal Header / Segmented Switcher -->
+                <div class="terminal-nav">
+                    <button id="tabEnterBtn" class="nav-btn active" onclick="switchTerminalTab('enter')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        <span>ENTER</span>
+                    </button>
+                    <button id="tabExitBtn" class="nav-btn" onclick="switchTerminalTab('exit')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>EXIT</span>
+                    </button>
+                </div>
+
+                <!-- ================= ENTER SECTION ================= -->
+                <div id="enterSection" class="terminal-body active-section">
+                    <div class="section-heading">
+                        <h3>VEHICLE ENTRY GATEWAY</h3>
+                        <p>Register incoming car into subterranean bays</p>
+                    </div>
+
+                    <form id="enterForm" onsubmit="handleVehicleEntry(event)">
+                        
+                        <!-- 1. CAR IS OF 5-SEATER OR 7-SEATER OPTION -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>SELECT CAR SEATING CAPACITY</span>
+                                <span class="badge-required">REQUIRED</span>
+                            </label>
+                            
+                            <div class="seating-selector">
+                                <label class="seat-option">
+                                    <input type="radio" name="seaterType" value="5-seater" checked onchange="updateVehicleIcon('5-seater')">
+                                    <div class="seat-card">
+                                        <div class="seat-card-icon">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7c-.6 0-1.1.2-1.5.6L3 10.1C2.4 10.6 2 11.3 2 12.1V16c0 .6.4 1 1 1h2"/>
+                                                <circle cx="7" cy="17" r="2"/>
+                                                <path d="M9 17h6"/>
+                                                <circle cx="17" cy="17" r="2"/>
+                                            </svg>
+                                        </div>
+                                        <div class="seat-card-details">
+                                            <span class="seat-title">5-SEATER</span>
+                                            <span class="seat-desc">Sedan / Hatchback / Compact</span>
+                                            <span class="seat-rate">$3.00 base + $2.00/hr</span>
+                                        </div>
+                                        <div class="check-pill">✓</div>
+                                    </div>
+                                </label>
+
+                                <label class="seat-option">
+                                    <input type="radio" name="seaterType" value="7-seater" onchange="updateVehicleIcon('7-seater')">
+                                    <div class="seat-card">
+                                        <div class="seat-card-icon">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M19 17h2c.6 0 1-.4 1-1v-4c0-1.1-.9-2-2-2h-1l-2-4H5L3 10H2c-.6 0-1 .4-1 1v5c0 .6.4 1 1 1h2"/>
+                                                <circle cx="7" cy="17" r="2"/>
+                                                <path d="M9 17h6"/>
+                                                <circle cx="17" cy="17" r="2"/>
+                                                <path d="M5 10l1.5-3h8.5l1.5 3"/>
+                                            </svg>
+                                        </div>
+                                        <div class="seat-card-details">
+                                            <span class="seat-title">7-SEATER</span>
+                                            <span class="seat-desc">SUV / MPV / Large Van</span>
+                                            <span class="seat-rate">$5.00 base + $3.50/hr</span>
+                                        </div>
+                                        <div class="check-pill">✓</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 2. ENTER THE NUMBER PLATE OPTION -->
+                        <div class="form-group">
+                            <label class="form-label" for="plateNumberInput">
+                                <span>ENTER VEHICLE NUMBER PLATE</span>
+                                <span class="badge-guide">UPPERCASE</span>
+                            </label>
+
+                            <div class="plate-input-container">
+                                <div class="plate-region">IND</div>
+                                <input 
+                                    type="text" 
+                                    id="plateNumberInput" 
+                                    class="plate-input" 
+                                    placeholder="e.g. MH 12 AB 1234" 
+                                    autocomplete="off"
+                                    maxlength="16"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Quick Sample Plate Buttons for convenient testing -->
+                            <div class="quick-plates">
+                                <span class="quick-title">Quick presets:</span>
+                                <button type="button" class="plate-chip" onclick="fillPlate('MH 12 QP 9009')">MH 12 QP 9009</button>
+                                <button type="button" class="plate-chip" onclick="fillPlate('KA 05 MN 4421')">KA 05 MN 4421</button>
+                                <button type="button" class="plate-chip" onclick="fillPlate('DL 03 XY 7712')">DL 03 XY 7712</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. LOGIN BUTTON -->
+                        <div class="form-actions">
+                            <button type="submit" id="loginBtn" class="btn-primary">
+                                <span class="btn-icon">⚡</span>
+                                <span class="btn-text">LOGIN & PARK VEHICLE</span>
+                            </button>
+                        </div>
+
+                        <div class="entry-tips">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <span>Optimal underground bay will be auto-allocated and synchronized to Supabase in real-time.</span>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- ================= EXIT SECTION ================= -->
+                <div id="exitSection" class="terminal-body" style="display: none;">
+                    <div class="section-heading">
+                        <h3>VEHICLE EXIT GATEWAY</h3>
+                        <p>Complete checkout, calculate fees, and release bay</p>
+                    </div>
+
+                    <form id="exitForm" onsubmit="handleVehicleExit(event)">
+                        
+                        <!-- ENTER THE NO. PLATE OPTION -->
+                        <div class="form-group">
+                            <label class="form-label" for="exitPlateInput">
+                                <span>ENTER NUMBER PLATE FOR EXIT</span>
+                                <span class="badge-guide">REGISTERED</span>
+                            </label>
+
+                            <div class="plate-input-container exit-theme">
+                                <div class="plate-region exit">OUT</div>
+                                <input 
+                                    type="text" 
+                                    id="exitPlateInput" 
+                                    class="plate-input" 
+                                    placeholder="e.g. KA 03 MG 8821" 
+                                    autocomplete="off"
+                                    maxlength="16"
+                                    required
+                                >
+                            </div>
+
+                            <!-- List of currently parked plates for instant selection -->
+                            <div class="parked-selector-box">
+                                <span class="quick-title">Or pick from parked cars:</span>
+                                <div id="parkedPlatesChips" class="parked-chips">
+                                    <!-- Populated dynamically -->
+                                    <span class="muted-note">No vehicles inside</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EXIT BUTTON -->
+                        <div class="form-actions">
+                            <button type="submit" id="exitBtn" class="btn-danger">
+                                <span class="btn-icon">🏁</span>
+                                <span class="btn-text">EXIT VEHICLE & PAY</span>
+                            </button>
+                        </div>
+
+                        <div class="exit-summary-preview">
+                            <div class="preview-item">
+                                <span class="preview-lbl">5-Seater Rate:</span>
+                                <span class="preview-val">$3.00 Base + $2.00/hr</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-lbl">7-Seater Rate:</span>
+                                <span class="preview-val">$5.00 Base + $3.50/hr</span>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Terminal Info Card -->
+            <div class="facility-spec-card">
+                <div class="spec-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>UNDERGROUND FACILITY SPECS</span>
+                </div>
+                <div class="spec-grid">
+                    <div class="spec-item">
+                        <span class="spec-k">Total Levels</span>
+                        <span class="spec-v">2 (B1 & B2)</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-k">Clearance Height</span>
+                        <span class="spec-v">2.6 Meters</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-k">Architecture</span>
+                        <span class="spec-v">Pure Java 25 HTTP</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-k">Database</span>
+                        <span class="spec-v">Supabase PostgreSQL</span>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- SUCCESS / RECEIPT MODAL (Entry Ticket & Exit Invoice) -->
+    <div id="receiptModal" class="modal-backdrop">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeReceiptModal()">✕</button>
+            <div id="modalContent">
+                <!-- Dynamically generated ticket/receipt -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPABASE SETTINGS & SCHEMA MODAL -->
+    <div id="supabaseModal" class="modal-backdrop">
+        <div class="modal-card supabase-modal-card">
+            <button class="modal-close" onclick="closeSupabaseModal()">✕</button>
+            <div class="modal-header">
+                <div class="supabase-brand-logo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="#3ECF8E">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <h2>Supabase Cloud Database Settings</h2>
+                </div>
+                <p>Connect your Supabase PostgreSQL project or view schema status.</p>
+            </div>
+
+            <div class="supabase-status-banner" id="supabaseModalStatus">
+                <!-- Status text -->
+            </div>
+
+            <form onsubmit="saveSupabaseConfig(event)">
+                <div class="form-group">
+                    <label class="form-label" for="cfgSupabaseUrl">Supabase Project URL</label>
+                    <input type="url" id="cfgSupabaseUrl" class="text-input" placeholder="https://your-project.supabase.co" required>
+                    <span class="field-hint">Found in Supabase Project Settings > API > Project URL</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="cfgSupabaseKey">Supabase Anon Public API Key</label>
+                    <input type="password" id="cfgSupabaseKey" class="text-input" placeholder="eyJhbGciOiJIUzI1NiIsIn..." required>
+                    <span class="field-hint">Found in Supabase Project Settings > API > Project API keys (anon public)</span>
+                </div>
+
+                <div class="form-actions-row">
+                    <button type="submit" class="btn-primary">
+                        <span>Save & Connect Supabase</span>
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="testSupabasePing()">
+                        <span>Test Connection</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="sql-section">
+                <div class="sql-header">
+                    <span>SUPABASE SQL SCHEMA SCRIPT</span>
+                    <button class="copy-sql-btn" onclick="copySqlSchema()">Copy SQL Script</button>
+                </div>
+                <pre class="sql-code-block" id="sqlSchemaText">
+-- Loading schema...
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

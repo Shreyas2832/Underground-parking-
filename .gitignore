@@ -1,0 +1,7 @@
+bin/
+*.class
+.vercel/
+node_modules/
+.env
+.env.local
+*.log
